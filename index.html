@@ -1,0 +1,673 @@
+<html>
+<head>
+    <link rel="stylesheet" href="scss/charting.css" />
+</head>
+
+<body>
+<!-- <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> -->
+
+
+<!--<div style="position: relative; width: 300px; height: 230px; background-color: yellow; overflow-y:scroll;"><img src="img/BARS.png"></div>-->
+
+<!--<<button id="button" onclick="drawTable(output_n,number)">Table</button>-->
+<div id="button" onclick="handleFileSelect()">GO</div>
+<div id="drop_zone" >Drop data file here</div>
+<output id="list"></output>
+
+<div id="table">
+    <div id="cells"></div>
+</div>
+
+
+<div id="DeviationChart" style="height:350px">
+
+    <div id="needles" style="background-color: #00affa; position: absolute;"></div>
+    <div id="needleAxis" style="background-color: #000000; position: absolute;"></div>
+    <div id="needleHeads" style="background-color: #666666; position: absolute;"></div>
+    <div id="DeviationLabels" style="background-color: #00affa; position: absolute;"></div>
+
+    <div id="deviationBars" style="background-color: #666666; position: absolute;"></div>
+
+</div>
+
+
+<div id="option_deviation">
+    <a id="link" href="#" onclick="drawDeviation()"><img src="img/ButtonTogglePercentages.png" height="25" width="25"></a>
+</div>
+
+<div id="deviationOnOff">
+    <a id="link" href="#" onclick="deviationToggle()"><img src="img/ButtonDeltaOff.png" height="25" width="25"></a>
+</div>
+
+<div id="chart" style="height:400px">
+   <div id="axis" style="background-color: #000000; position: relative; width: 360px; height: 0px; top:0px" ></div>
+    <div id="bars"></div>
+    <div id="references"></div>
+    <div id="deltas"></div>
+    <div id="barlabels"></div>
+    <div id="legend" style="background-color: #ffffff; border: none; position: absolute; width: 200px; height: 15px; top: 0px"></div>
+
+</div>
+<div id="debug"></div>
+
+
+
+<script type="text/javascript">
+
+    //$('a#link').click(drawDeviationBars());
+
+    var data = {
+        rows: [],
+        datapoint: [],
+        row: [],
+        markedRow: -1,
+        activeRow: -1,
+        type: "A"
+
+    }
+
+    var deviationShow = true;
+
+    var myChart = {
+        columnWidth: 50,
+        barWidth:  0.7,
+        ColorPositive: "#8cb400",
+        ColorNegative: "#ff0000",
+        fontSize: "12px"
+
+    }
+
+    function setRange(max, min) {
+        return (max - min);
+    }
+    function setMax(values) {
+        var max = 0;
+
+        if (Math.max.apply(Math, values) <= 0) {
+            max = 0;
+        }
+        else {
+            max = Math.max.apply(Math, values);
+        }
+        return (max);
+        console.log("MAX:" + max);
+    }
+    function setMin(values) {
+        var max = 0;
+
+        if (Math.min.apply(Math, values) >= 0) {
+            min = 0;
+        }
+        else {
+            min = Math.min.apply(Math, values);
+        }
+        return (min);
+    }
+
+console.log("SHOW: "+deviationShow);
+
+    function deviationToggle(){
+        if (deviationShow){
+            document.getElementById('chart').style.top = "130px";
+            document.getElementById('chart').style.height = "800px";
+            document.getElementById('deviationOnOff').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonDeltaOn.png height=25px width=25px></a>';
+            deviationShow = false;
+
+            drawChart(data.row);
+            if(data.markedRow>-1) {drawDelta(data.row)};
+
+        }
+        else {
+            document.getElementById('chart').style.top = "490px";
+            document.getElementById('chart').style.height = "400px";
+            document.getElementById('deviationOnOff').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonDeltaOff.png height=25px width=25px></a>';
+            deviationShow = true;
+
+            drawChart(data.row);
+            if(data.markedRow>-1) {drawDelta(data.row)};
+            if(data.type ==="P") {drawDeviationBars(data.row, data.activeRow)}
+            else {drawNeedles(data.row, data.activeRow)}
+        }
+
+    }
+
+
+    function hoverRow(rowNumber) {
+        var number = data.rows[rowNumber].split(',');
+        for (i = 0; i < number.length; i++) {
+            var rowID = "cell_" + rowNumber + "_" + i;
+            document.getElementById(rowID).style.backgroundColor = '#c0c0c0';
+        }
+
+        drawChart(number);
+
+        data.activeRow = rowNumber;
+        data.row = number;
+
+        if(data.markedRow>-1) {drawDelta(number)};
+        if(data.markedRow>-1) {
+            if(data.type ==="P") {drawDeviationBars(data.row, data.activeRow)}
+            else {drawNeedles(data.row, data.activeRow)}
+        };
+    }
+    function unhoverRow(rowNumber) {
+        var number = data.rows[rowNumber].split(',');
+
+        for (i = 0; i < number.length; i++) {
+            var rowID = "cell_" + rowNumber + "_" + i;
+            document.getElementById(rowID).style.backgroundColor = '#ffffff';
+        }
+    }
+
+    function hoverBar(barNumber) {
+        var barID = "bar_" + barNumber;
+        document.getElementById(barID).style.backgroundColor = '#00affa';
+    }
+    function unhoverBar(barNumber) {
+        var barID = "bar_" + barNumber;
+        document.getElementById(barID).style.backgroundColor = '#666666';
+
+    }
+
+    function clickRow(rowNumber) {
+        var number = data.rows[rowNumber].split(',');
+
+        //drawReference(number);
+
+        for (i = 0; i < number.length; i++) {
+            var cellID = "cell_" + rowNumber + "_" + i;
+            if(data.markedRow>-1) {var referenceCellID = "cell_" + data.markedRow + "_" + i};
+//console.log(cellID+":"+referenceCellID);
+
+            document.getElementById(cellID).style.fontWeight = "bold";
+            //document.getElementById(cellID).style.color = '#00affa';
+            if(data.markedRow>-1) {document.getElementById(referenceCellID).style.fontWeight = "normal"};
+        }
+
+        data.markedRow = rowNumber;
+        document.getElementById('legend').innerHTML ="Compared to Row:" + (data.markedRow);
+        drawDelta(rowNumber);
+    }
+
+    function drawDelta(input) {
+
+            var inputReference = data.rows[data.markedRow].split(',');
+            var deltaSpacer = 0;
+            var topSpacer = 0;
+
+            var bar_width = 10;
+            var divs = [];
+
+            var factor = document.getElementById('chart').style.height.substr(0,3)* 0.8/setRange(setMax(data.datapoint),setMin(data.datapoint));
+            var zeroPosition = setMax(data.datapoint)* 1.1*factor;
+
+            for(i=0; i<input.length; i++) {
+
+                var top = 0;
+                var topLabel = 0;
+                var height = 0;
+
+               if(input[i] > 0 && inputReference[i] >0) {
+                 deltaSpacer = 0;
+                   topSpacer = 0;
+               }
+
+               if(input[i] < 0 && inputReference[i]<0) {
+                   deltaSpacer = 0;
+                   topSpacer = 5;
+               }
+
+                if(input[i]>0 && inputReference[i]<0){
+                    deltaSpacer = 5;
+                    topSpacer = 0;
+                }
+
+                if(input[i]<0 && inputReference[i]>0){
+                    deltaSpacer = 0;
+                    topSpacer = 5;
+                }
+
+                if(inputReference[i] - input[i]<0){
+                    var delta = input[i] - inputReference[i];
+                    delta = delta*factor + deltaSpacer;
+                    top=zeroPosition-input[i]*factor+topSpacer;
+                    var color = myChart.ColorPositive;
+                }
+                else {
+                    var delta = inputReference[i] - input[i];
+                    delta = delta*factor+deltaSpacer;
+                    top=zeroPosition-inputReference[i]*factor+ topSpacer;
+                    var color = myChart.ColorNegative;
+                }
+
+                divs.push('<div id="bar_' + i + '"' +
+                ' style="background-color: '+ color + '; position:absolute;' +
+                ' height:' + delta + 'px;' +
+                ' width:' + myChart.columnWidth*0.3+ 'px;' +
+                ' top:' + top + 'px;' +
+                ' left:' + (myChart.columnWidth*i+0.55*myChart.columnWidth)  + 'px"' +
+                '></div>' );
+
+            }
+
+        document.getElementById('deltas').innerHTML = divs.join('');
+
+        }
+
+    function drawChart(input) {
+
+
+        var bar_width = myChart.columnWidth;
+        var divs = [];
+        var divsBars = [];
+
+        var factor = document.getElementById('chart').style.height.substr(0,3)* 0.8/setRange(setMax(data.datapoint),setMin(data.datapoint));
+        //var temp = document.getElementById('chart').style.height;
+        //console.log(temp);
+
+        var zeroPosition = setMax(data.datapoint)* 1.1*factor;
+        document.getElementById('axis').style.top = zeroPosition;
+        document.getElementById('axis').style.height = "5px";
+        document.getElementById('axis').style.width = myChart.columnWidth*input.length+"px";
+
+        for(i=0; i<input.length; i++) {
+
+            var top = 0;
+            var topLabel = 0;
+            var height = 0;
+
+            if(input[i]<=0){
+                top=zeroPosition;
+                topLabel =zeroPosition+15;
+            }
+            else {
+                top=zeroPosition-input[i]*factor;
+                topLabel = zeroPosition-15;
+            }
+
+
+            if(input[i]<0){height=(input[i]*-1*factor)+5;} else {height = input[i]*factor;}
+
+            divs.push('<div id="bar_' + i + '"' +
+            ' style="background-color: #666666; position:absolute;' +
+            ' height:' + height + 'px;' +
+            ' width:' + myChart.columnWidth*myChart.barWidth + 'px;' +
+            ' top:' + top + 'px;' +
+            ' left:' + (myChart.columnWidth*i+(1-myChart.barWidth)/2*myChart.columnWidth)  + 'px"' +
+            ' onmouseover="hoverBar('+i+')"' +
+            ' onmouseleave="unhoverBar('+i+')"'+'></div>' );
+
+           divsBars.push('<div id="barLabel_' + i + '"' +
+            ' style="color: #000000; position:absolute; text-align: center; text-shadow: 0px 0px 3px #ffffff, 3px 0 3px #ffffff,0 3px 3px #ffffff, -3px 0 3px #ffffff,0 -3px 3px #ffffff; font-family: Arial; font-size: '+myChart.fontSize+'; text-align: center;' +
+            ' height:20px;' +
+            ' width:' + myChart.columnWidth + 'px;' +
+            ' top:' + (topLabel) + 'px;' +
+            ' left:'+(myChart.columnWidth*i)+'px">'+input[i]+'</div>');
+        }
+        document.getElementById('bars').innerHTML = divs.join('');
+        document.getElementById('barlabels').innerHTML = divsBars.join('');
+
+
+    }
+
+    function drawTable(rows) {
+
+        var divs = [];
+
+        for (i = 0; i < rows.length; i++) {
+
+            number = rows[i].split(',');
+
+            var top = 0;
+            var left = 0;
+            var height = 0;
+
+            top = 20*i+1;
+            width = number.count * 50;
+
+            divs.push('<div id="row_'+ i +'" style="top:'+ top +'px; height: 21px; width:' + width +'px; background-color:#eeeeee;">');
+
+            for (j=0; j<number.length; j++) {
+
+                if(i>0) {
+                    var interaction = ' onmouseover="hoverRow('+i+')"' +
+                    ' onclick="clickRow('+i+')"' +
+                    ' onmouseleave="unhoverRow('+i+') "'
+
+                }
+                else {
+                    number[j] = timeConverter(number[j]);
+                }
+
+
+                divs.push('<div id="cell_' + i + '_'+j+'"' +
+                ' style="font-family: Arial; font-size: '+myChart.fontSize+'; text-align: right; vertical-align: middle; position:absolute;' +
+                ' height: 20px;' +
+                ' width: 50px;' +
+                ' top:' + 21*i + 'px;' +
+                ' left:' + 50 *j + 'px" ' + interaction +
+                '>' + number[j] + '</div>');
+               // '><span style="display: table-cell; vertical-align: middle; horizontal-align: right">' + number[j] + '</span></div>')
+            }
+            divs.push("</div>");
+        }
+        document.getElementById('cells').innerHTML = divs.join('');
+
+    }
+
+    function drawNeedles(input,hoveredRow) {
+        //document.getElementById('helper').innerHTML = input + ":" + data.rows[data.markedRow];
+        var top = 0;
+        var headPosition = 0;
+        var labelPosition = 0;
+        var divs = [];
+        var divHeads = [];
+        var divLabels = [];
+        var color = [];
+        var height = 0;
+        var deltaRelative  = [];
+        var labelSpace = 20;
+        var basis = data.rows[data.markedRow].split(',');
+
+
+
+        for(i=0; i<input.length; i++) {
+
+            deltaRelative[i] = (input[i] - basis[i]) / basis[i];
+        }
+
+
+        if(setMax(deltaRelative) > 1) {
+            var max = 1;
+        }
+        else
+        {
+            var max = setMax(deltaRelative);
+        }
+
+        if(setMin(deltaRelative) < -1) {
+            var min = -1;
+        }
+        else
+        {
+            var min = setMin(deltaRelative);
+        }
+
+        var factor = (document.getElementById('DeviationChart').style.height.substr(0,3)-(2*labelSpace))*0.8/setRange(max,min);
+        var zeroPosition = max*factor+labelSpace;
+        //console.log("MAX: " +max + "MIN: "+ min + ":" + factor + ":" +setRange(max,min));
+
+        for(i=0; i<input.length; i++) {
+
+            if(deltaRelative[i] > 1) {
+                var shape = "position: absolute; width: 0; height: 0; border-style: solid; border-width: 0 8px 8px 8px; border-color: #ffffff #ffffff "+ myChart.ColorPositive + " #ffffff; left:" + (myChart.columnWidth*i + myChart.columnWidth/2 -7) + "px;";
+
+               // "width: 0; height: 0; border-style: solid; border-width: 0 10px 10px 10px; border-color: transparent transparent #666666 transparent;";
+            }
+            else if (deltaRelative[i] < -1){
+                var shape = "position: absolute; width: 0; height: 0; border-style: solid; border-width: 8px 8px 0 8px; border-color: "+ myChart.ColorNegative + " #ffffff #ffffff #ffffff; left:" + (myChart.columnWidth*i + myChart.columnWidth/2 -7) + "px;";
+                //var shape = "border: solid; border-width: 10px  border-color: #00affa;";
+            }
+            else {
+                var shape = "position:absolute; border-radius: 10px; height: 8px; width:8px; left:" + (myChart.columnWidth*i + myChart.columnWidth/2 -4) + "px;";
+            }
+
+
+
+            if (deltaRelative[i] > 0) {
+                if(deltaRelative[i]>1){height = factor;}else {height= deltaRelative[i]*factor};
+                top = zeroPosition-height;
+                headPosition = top;
+                labelPosition = top - 15;
+                color[i] = myChart.ColorPositive;
+            }
+            else {
+                if(deltaRelative[i]<-1){height = factor;}else {height= height = deltaRelative[i]*-1 * factor};
+                top = zeroPosition;
+                headPosition = top + height;
+                labelPosition = top + height + 10;
+                color[i] = myChart.ColorNegative;
+            };
+           // console.log(factor+":"+":"+height+":"+deltaRelative[i]+":"+top);
+
+
+            divs.push('<div id="needleLine_' + i +'" style="background-color: '+ color[i] + '; position:absolute;' +
+            ' top:'+top+'px;' +
+            ' height:'+ height+'px;' +
+            ' width:2px;' +
+            ' left:' + (myChart.columnWidth*i + myChart.columnWidth/2) + 'px"' +
+            '></div>');
+
+            top = zeroPosition-height-5;
+
+            if(data.markedRow != hoveredRow ){
+
+            divHeads.push('<div id="needleHead_' + i + '" style="border: 1px solid '+ color[i] + '; background-color:'+ color[i] + ';' +
+            ' top:'+headPosition+'px;' + shape +
+            '"></div>');
+            }
+
+            var displayLabel = deltaRelative[i]*100;
+
+            divLabels.push('<div id="DeviationLabel_' + i +'" style="background-color: transparent; text-align: center; position:absolute; font-family: Arial; font-size: '+myChart.fontSize+'; text-align: center;' +
+                    ' top:'+labelPosition +'px;' +
+                    ' height: 20px;' +
+                    ' left:' + (myChart.columnWidth*i) + 'px;' +
+                    ' width:'+ myChart.columnWidth + 'px"' +
+                    ' >' + displayLabel.toFixed(1) +'</div>');
+
+        }
+
+        document.getElementById('needleAxis').style.top = zeroPosition;
+        document.getElementById('needleAxis').style.height = "5px";
+        document.getElementById('needleAxis').style.width = myChart.columnWidth*input.length;
+        document.getElementById('needles').innerHTML = divs.join('');
+        document.getElementById('needleHeads').innerHTML = divHeads.join('');
+        document.getElementById('DeviationLabels').innerHTML = divLabels.join('');
+
+    }
+
+    function drawDeviationBars(input,hoveredRow){
+
+        document.getElementById('needles').innerHTML = "";
+        document.getElementById('needleHeads').innerHTML = "";
+        document.getElementById('DeviationLabels').innerHTML = "";
+
+        var top = 0;
+        var labelPosition = 0;
+        var divs = [];
+        var divLabels = [];
+        var color = [];
+        var height = 0;
+        var deltaAbsolute  = [];
+        var labelSpace = 20;
+        var basis = data.rows[data.markedRow].split(',');
+
+
+
+        for(i=0; i<input.length; i++) {
+
+            deltaAbsolute[i] = input[i] - basis[i];
+        }
+
+
+        var factor = (document.getElementById('DeviationChart').style.height.substr(0,3)-(2*labelSpace))*0.8/setRange(setMax(input),setMin(input));
+        //console.log("FAKTOR: "+factor);
+        //onsole.log("RANGE: "+ setRange(setMax(deltaAbsolute),setMin(deltaAbsolute)));
+        var zeroPosition = setMax(input)*factor+labelSpace;
+
+        for(i=0; i<input.length; i++) {
+
+            if (deltaAbsolute[i] > 0) {
+                height= deltaAbsolute[i]*factor;
+                top = zeroPosition-height;
+                labelPosition = top - 15;
+                color[i] = myChart.ColorPositive;
+            }
+            else {
+                height= height = deltaAbsolute[i]*-1 * factor;
+                top = zeroPosition;
+                labelPosition = top + height + 10;
+                color[i] = myChart.ColorNegative;
+            };
+            // console.log(factor+":"+":"+height+":"+deltaRelative[i]+":"+top);
+
+
+            divs.push('<div id="needleLine_' + i +'" style="background-color: '+ color[i] + '; position:absolute;' +
+            ' top:'+top+'px;' +
+            ' height:'+ height+'px;' +
+            ' width:30px;' +
+            ' left:' + (myChart.columnWidth*i + (1-myChart.barWidth)/2*myChart.columnWidth) + 'px"' +
+            '></div>');
+
+            top = zeroPosition-height-5;
+
+            var displayLabel = deltaAbsolute[i];
+
+            divLabels.push('<div id="DeviationLabel_' + i +'" style="background-color: transparent; text-align: center; position:absolute; font-family: Arial; font-size: '+myChart.fontSize+'; text-align: center;' +
+            ' top:'+labelPosition +'px;' +
+            ' height: 20px;' +
+            ' left:' + (myChart.columnWidth*i) + 'px;' +
+            ' width:'+ myChart.columnWidth + 'px"' +
+            ' >' + displayLabel.toFixed(1) +'</div>');
+
+        }
+
+        document.getElementById('needleAxis').style.top = zeroPosition;
+        document.getElementById('needleAxis').style.height = "5px";
+        document.getElementById('needleAxis').style.width = myChart.columnWidth*input.length;
+        document.getElementById('needles').innerHTML = divs.join('');
+        document.getElementById('DeviationLabels').innerHTML = divLabels.join('');
+
+
+
+    }
+
+    function drawDeviation(){
+        if (data.type === "A") {
+            document.getElementById('option_deviation').innerHTML = '<a id=link href=# onclick=drawDeviation()><img src=img/ButtonToggleAbsolute.png height=25px width=25px></a>';
+            data.type = "P";
+
+            drawDeviationBars(data.row, data.activeRow);
+        }
+        else {
+            document.getElementById('option_deviation').innerHTML = '<a id=link href=# onclick=drawDeviation()><img src=img/ButtonTogglePercentages.png height=25px width=25px></a>';
+            data.type = "A";
+
+            drawNeedles(data.row, data.activeRow);
+        }
+
+    }
+
+
+
+    function drawReference(input) {
+
+        var bar_width = 30;
+        var top = 20;
+        var divs = [];
+
+        var factor = document.getElementById('chart').style.height.substr(0,3)* 0.8/setRange(setMax(data.datapoint),setMin(data.datapoint));
+        var zeroPosition = setMax(data.datapoint)* 1.1*factor;
+
+        for(i=0; i<input.length; i++) {
+
+            if(input[i]<=0){
+                top=zeroPosition+input[i]*-1*factor+5;
+            }
+            else {
+                top=zeroPosition-input[i]*factor;
+            }
+
+            divs.push('<div id="reference_' + i + '"' +
+            ' style="background-color: #00affa; position:absolute;' +
+            ' height: 1px;' +
+            ' width:' + bar_width * 0.7 + 'px;' +
+            ' top:' + top + 'px;' +
+            ' left:' + (bar_width * i +5)+ 'px"' +
+            '></div>');
+        };
+
+        document.getElementById('references').innerHTML = divs.join('');
+    }
+
+    function drawOutput(out,row) {
+       drawTable(row);
+   }
+
+    function timeConverter(UNIX_timestamp){
+        var a = new Date(UNIX_timestamp*1000);
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var year = a.getFullYear()-2000;
+        var month = a.getMonth();
+        var date = a.getDate();
+        var hour = a.getHours();
+        var min = a.getMinutes();
+        var sec = a.getSeconds();
+        var time = date + '/' + month + '/' + year;
+        return time;
+    }
+
+    function handleFileSelect(evt) {
+
+   //     evt.stopPropagation();
+   //     evt.preventDefault();
+
+   //     var files = evt.dataTransfer.files;
+
+        var output_n = [];
+        var number = [];
+
+        data.rows[0] = "1427938248,1428938248,1427738248,1426938248,1425938248,-1424938248,1428938248,1428938248,1428938248,1428938248,1428938248,1428938248,-1428938248";
+        data.rows[1] = "10,20,30,40,50,-60,70,80,90,100,43,120,-100";
+        data.rows[2] = "11,12,13,14,40,-56,65,70,80,90,46,100,-90";
+        data.rows[3] = "34,21,31,4,21,31,4,21,31,5,-12,-21,-80";
+
+/*        for (var i = 0, f;f =files[i]; i++){
+            if (f.type === "text/plain") {
+                var reader = new FileReader();
+
+                reader.onload = function (evt) {
+                    var contents = evt.target.result;
+                    data.rows = contents.split('\n');*/
+
+                    for (var j = 1; j < data.rows.length; j++) {
+                        number = data.rows[j].split(',');
+
+                        for (var k = 0; k < number.length; k++) {
+                            data.datapoint.push(number[k]);
+
+                        }
+
+                    }
+        //console.log(data.datapoint);
+                    drawTable( data.rows);
+/*               };
+            }
+        }*/
+
+
+
+
+
+
+     /*   for (f=0; f<files.length; f++) {
+            reader.readAsText(files[f]);
+        }*/
+    }
+
+    function handleDragOver(evt) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        evt.dataTransfer.dropEffect = 'copy';
+    }
+
+    var dropZone = document.getElementById('drop_zone');
+    //document.addEventListener('load',handleFileSelect,false );
+    dropZone.addEventListener('dragover', handleDragOver, false);
+    dropZone.addEventListener('drop',handleFileSelect, false);
+
+</script>
+
+</body>
+</html>

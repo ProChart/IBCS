@@ -1,0 +1,83 @@
+#drop_zone {
+  background-color: #F4F4F4;
+  color: white;
+  font-family: Arial;
+  font-size: 36px;
+  text-align: center;
+  padding-top: 30px;
+  /* vertical-align: middle; */
+  position: absolute;
+  float: left;
+  left: 5px;
+  height: 80px;
+  width: 800px;
+  opacity: 1; }
+
+#table {
+  background-color: #ffffff;
+  position: absolute;
+  width: 800px;
+  height: 400px;
+  top: 100px;
+  left: 850px; }
+
+#row {
+  border-bottom: 1px;
+  border-color: #666666; }
+
+#DeviationChart {
+  position: absolute;
+  border: solid #eeeeee 1px;
+  overflow-y: auto;
+  float: left;
+  left: 5px;
+  top: 130px;
+  height: 400px;
+  width: 800px; }
+
+#chart {
+  position: absolute;
+  background-color: #ffffff;
+  overflow-y: auto;
+  float: left;
+  left: 5px;
+  top: 490px;
+  height: 400px;
+  width: 800px;
+  border: solid #eeeeee 1px; }
+
+#helper {
+  position: absolute;
+  float: left;
+  border: solid #eeeeee 1px;
+  left: 5px;
+  top: 120px;
+  height: 80px;
+  width: 800px; }
+
+#button {
+  position: absolute;
+  float: left;
+  left: 900px;
+  top: 20px;
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 20px;
+  background: #3498db;
+  padding: 10px 20px 10px 20px;
+  text-decoration: none; }
+
+#option_deviation {
+  left: 775px;
+  top: 90px;
+  position: absolute; }
+
+#deviationOnOff {
+  left: 745px;
+  top: 90px;
+  position: absolute; }
+
+/*# sourceMappingURL=charting.css.map */
