@@ -11,7 +11,8 @@
   left: 5px;
   height: 80px;
   width: 800px;
-  opacity: 1; }
+  opacity: 1;
+}
 
 #table {
   background-color: #ffffff;
@@ -89,4 +90,47 @@
   left: 745px;
   top:90px;
   position:absolute
+}
+
+#BarLine{
+  left: 715px;
+  top:90px;
+  position:absolute
+}
+
+#areaRed{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 0px;
+  height: 0px;
+  background-color: #fa8a86;
+}
+
+#areaGreen{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 0px;
+  height: 0px;
+  background-color: #b6faa8;
+}
+
+#areaBase{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 0px;
+  height: 0px;
+  background-color: #c3c3c3;
+}
+
+#baseLine{
+  position: absolute;
+  top: 148px;
+  left: 0px;
+  width: 0px;
+  height: 2px;
+  border:none;
+  border-top:3px dotted #929292;
 }

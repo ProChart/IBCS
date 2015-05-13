@@ -1,6 +1,7 @@
 <html>
 <head>
     <link rel="stylesheet" href="scss/charting.css" />
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 </head>
 
 <body>
@@ -39,14 +40,22 @@
     <a id="link" href="#" onclick="deviationToggle()"><img src="img/ButtonDeltaOff.png" height="25" width="25"></a>
 </div>
 
+<div id="BarLine">
+    <a id="link" href="#" onclick="ChartTypeToggle()"><img src="img/ButtonDeltaOff.png" height="25" width="25"></a>
+</div>
+
 <div id="chart" style="height:400px">
    <div id="axis" style="background-color: #000000; position: relative; width: 360px; height: 0px; top:0px" ></div>
     <div id="bars"></div>
     <div id="references"></div>
     <div id="deltas"></div>
+    <div id="deltasLabels"></div>
     <div id="barlabels"></div>
     <div id="legend" style="background-color: #ffffff; border: none; position: absolute; width: 200px; height: 15px; top: 0px"></div>
-
+    <div id="baseLine"></div>
+    <div id="areaBase"></div>
+    <div id="areaRed"></div>
+    <div id="areaGreen"></div>
 </div>
 <div id="debug"></div>
 
@@ -73,8 +82,8 @@
         barWidth:  0.7,
         ColorPositive: "#8cb400",
         ColorNegative: "#ff0000",
-        fontSize: "12px"
-
+        fontSize: "12px",
+        chartType: "Bar"
     }
 
     function setRange(max, min) {
@@ -104,8 +113,6 @@
         return (min);
     }
 
-console.log("SHOW: "+deviationShow);
-
     function deviationToggle(){
         if (deviationShow){
             document.getElementById('chart').style.top = "130px";
@@ -120,17 +127,29 @@ console.log("SHOW: "+deviationShow);
         else {
             document.getElementById('chart').style.top = "490px";
             document.getElementById('chart').style.height = "400px";
+            document.getElementById('deltas').innerHTML = "";
+            document.getElementById('deltasLabels').innerHTML = "";
             document.getElementById('deviationOnOff').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonDeltaOff.png height=25px width=25px></a>';
             deviationShow = true;
 
             drawChart(data.row);
-            if(data.markedRow>-1) {drawDelta(data.row)};
+            //if(data.markedRow>-1) {drawDelta(data.row)};
             if(data.type ==="P") {drawDeviationBars(data.row, data.activeRow)}
             else {drawNeedles(data.row, data.activeRow)}
         }
 
     }
 
+    function ChartTypeToggle(){
+        if(myChart.chartType === "Bar") {
+            drawChart(data.row);
+            myChart.chartType = "Line";
+        }
+        else {
+            drawChart(data.row);
+            myChart.chartType = "Bar";
+        }
+    }
 
     function hoverRow(rowNumber) {
         var number = data.rows[rowNumber].split(',');
@@ -144,12 +163,23 @@ console.log("SHOW: "+deviationShow);
         data.activeRow = rowNumber;
         data.row = number;
 
-        if(data.markedRow>-1) {drawDelta(number)};
         if(data.markedRow>-1) {
             if(data.type ==="P") {drawDeviationBars(data.row, data.activeRow)}
             else {drawNeedles(data.row, data.activeRow)}
+        }
+
+        if(deviationShow == false && data.markedRow != data.activeRow) {
+            if(data.markedRow>-1) {drawDelta(number)};
+
+        }
+        else {
+            document.getElementById('deltasLabels').innerHTML = "";
+            document.getElementById('deltas').innerHTML = "";
+
         };
+
     }
+
     function unhoverRow(rowNumber) {
         var number = data.rows[rowNumber].split(',');
 
@@ -163,6 +193,7 @@ console.log("SHOW: "+deviationShow);
         var barID = "bar_" + barNumber;
         document.getElementById(barID).style.backgroundColor = '#00affa';
     }
+
     function unhoverBar(barNumber) {
         var barID = "bar_" + barNumber;
         document.getElementById(barID).style.backgroundColor = '#666666';
@@ -197,6 +228,7 @@ console.log("SHOW: "+deviationShow);
 
             var bar_width = 10;
             var divs = [];
+            var divsDeltaLabels = [];
 
             var factor = document.getElementById('chart').style.height.substr(0,3)* 0.8/setRange(setMax(data.datapoint),setMin(data.datapoint));
             var zeroPosition = setMax(data.datapoint)* 1.1*factor;
@@ -207,15 +239,15 @@ console.log("SHOW: "+deviationShow);
                 var topLabel = 0;
                 var height = 0;
 
-               if(input[i] > 0 && inputReference[i] >0) {
-                 deltaSpacer = 0;
-                   topSpacer = 0;
-               }
+                if(input[i] > 0 && inputReference[i] >0) {
+                    deltaSpacer = 0;
+                    topSpacer = 0;
+                }
 
-               if(input[i] < 0 && inputReference[i]<0) {
-                   deltaSpacer = 0;
-                   topSpacer = 5;
-               }
+                if(input[i] < 0 && inputReference[i]<0) {
+                    deltaSpacer = 0;
+                    topSpacer = 5;
+                }
 
                 if(input[i]>0 && inputReference[i]<0){
                     deltaSpacer = 5;
@@ -229,28 +261,49 @@ console.log("SHOW: "+deviationShow);
 
                 if(inputReference[i] - input[i]<0){
                     var delta = input[i] - inputReference[i];
-                    delta = delta*factor + deltaSpacer;
+                    var deltaPx = delta*factor + deltaSpacer;
                     top=zeroPosition-input[i]*factor+topSpacer;
                     var color = myChart.ColorPositive;
                 }
                 else {
                     var delta = inputReference[i] - input[i];
-                    delta = delta*factor+deltaSpacer;
+                    var deltaPx = delta*factor+deltaSpacer;
                     top=zeroPosition-inputReference[i]*factor+ topSpacer;
                     var color = myChart.ColorNegative;
                 }
 
+                if(inputReference[i] - input[i]<0){
+                    var deltaText = "+"+delta;
+                    var deltaTextPos = top - 15;
+                    var deltaTextFormat = "color: #000000; position:absolute; text-align: right; text-shadow: 0px 0px 3px "+myChart.ColorPositive+", 3px 0 3px "+myChart.ColorPositive+",0 3px 3px "+myChart.ColorPositive+", -3px 0 3px "+myChart.ColorPositive+",0 -3px 3px "+myChart.ColorPositive+"; font-family: Arial; font-size: "+myChart.fontSize+"; text-align: center;"
+
+                }
+                if(inputReference[i] - input[i]>0){
+                    var deltaText = "-"+delta;
+                    var deltaTextPos = top + deltaPx;
+                    var deltaTextFormat = "color: #000000; position:absolute; text-align: right; text-shadow: 0px 0px 3px "+myChart.ColorNegative+", 3px 0 3px "+myChart.ColorNegative+",0 3px 3px "+myChart.ColorNegative+", -3px 0 3px "+myChart.ColorNegative+",0 -3px 3px "+myChart.ColorNegative+"; font-family: Arial; font-size: "+myChart.fontSize+"; text-align: center;"
+                    console.log(height);
+                }
+
                 divs.push('<div id="bar_' + i + '"' +
                 ' style="background-color: '+ color + '; position:absolute;' +
-                ' height:' + delta + 'px;' +
+                ' height:' + deltaPx + 'px;' +
                 ' width:' + myChart.columnWidth*0.3+ 'px;' +
                 ' top:' + top + 'px;' +
                 ' left:' + (myChart.columnWidth*i+0.55*myChart.columnWidth)  + 'px"' +
                 '></div>' );
 
+                divsDeltaLabels.push('<div id="deltasLabels_' + i + '" style="position:absolute;' + deltaTextFormat +
+                ' height: 50px;' +
+                ' width: '+myChart.columnWidth + 'px;' +
+                ' top: '+deltaTextPos+'px;'+
+                ' left:'+(myChart.columnWidth*i +10)+'px">'+deltaText+'</div>');
+
             }
 
         document.getElementById('deltas').innerHTML = divs.join('');
+        document.getElementById('deltasLabels').innerHTML = divsDeltaLabels.join('');
+        //console.log(divsDeltaLabels.join(''))
 
         }
 
@@ -260,6 +313,8 @@ console.log("SHOW: "+deviationShow);
         var bar_width = myChart.columnWidth;
         var divs = [];
         var divsBars = [];
+
+
 
         var factor = document.getElementById('chart').style.height.substr(0,3)* 0.8/setRange(setMax(data.datapoint),setMin(data.datapoint));
         //var temp = document.getElementById('chart').style.height;
@@ -276,6 +331,7 @@ console.log("SHOW: "+deviationShow);
             var topLabel = 0;
             var height = 0;
 
+
             if(input[i]<=0){
                 top=zeroPosition;
                 topLabel =zeroPosition+15;
@@ -285,27 +341,109 @@ console.log("SHOW: "+deviationShow);
                 topLabel = zeroPosition-15;
             }
 
+            if(input[i]<0){
+                height=(input[i]*-1*factor)+5;
+            }
+            else {
+                height = input[i]*factor;
+            }
 
-            if(input[i]<0){height=(input[i]*-1*factor)+5;} else {height = input[i]*factor;}
+            if(myChart.chartType === "Bar") {
 
-            divs.push('<div id="bar_' + i + '"' +
-            ' style="background-color: #666666; position:absolute;' +
-            ' height:' + height + 'px;' +
-            ' width:' + myChart.columnWidth*myChart.barWidth + 'px;' +
-            ' top:' + top + 'px;' +
-            ' left:' + (myChart.columnWidth*i+(1-myChart.barWidth)/2*myChart.columnWidth)  + 'px"' +
-            ' onmouseover="hoverBar('+i+')"' +
-            ' onmouseleave="unhoverBar('+i+')"'+'></div>' );
+                document.getElementById('areaGreen').innerHTML = "";
+                document.getElementById('areaGreen').style.width = "0px";
+                document.getElementById('areaGreen').style.height = "0px";
 
-           divsBars.push('<div id="barLabel_' + i + '"' +
-            ' style="color: #000000; position:absolute; text-align: center; text-shadow: 0px 0px 3px #ffffff, 3px 0 3px #ffffff,0 3px 3px #ffffff, -3px 0 3px #ffffff,0 -3px 3px #ffffff; font-family: Arial; font-size: '+myChart.fontSize+'; text-align: center;' +
-            ' height:20px;' +
-            ' width:' + myChart.columnWidth + 'px;' +
-            ' top:' + (topLabel) + 'px;' +
-            ' left:'+(myChart.columnWidth*i)+'px">'+input[i]+'</div>');
+                document.getElementById('areaRed').innerHTML = "";
+                document.getElementById('areaRed').style.width = "0px";
+                document.getElementById('areaRed').style.height = "0px";
+
+                document.getElementById('areaBase').innerHTML = "";
+                document.getElementById('areaBase').style.width = "0px";
+                document.getElementById('areaBase').style.height = "0px";
+
+
+                divs.push('<div id="bar_' + i + '"' +
+                ' style="background-color: #666666; position:absolute;' +
+                ' height:' + height + 'px;' +
+                ' width:' + myChart.columnWidth * myChart.barWidth + 'px;' +
+                ' top:' + top + 'px;' +
+                ' left:' + (myChart.columnWidth * i + (1 - myChart.barWidth) / 2 * myChart.columnWidth) + 'px"' +
+                ' onmouseover="hoverBar(' + i + ')"' +
+                ' onmouseleave="unhoverBar(' + i + ')"' + '></div>');
+
+                divsBars.push('<div id="barLabel_' + i + '"' +
+                ' style="color: #000000; position:absolute; text-align: center; text-shadow: 0px 0px 3px #ffffff, 3px 0 3px #ffffff,0 3px 3px #ffffff, -3px 0 3px #ffffff,0 -3px 3px #ffffff; font-family: Arial; font-size: ' + myChart.fontSize + '; text-align: center;' +
+                ' height:20px;' +
+                ' width:' + myChart.columnWidth + 'px;' +
+                ' top:' + (topLabel) + 'px;' +
+                ' left:' + (myChart.columnWidth * i) + 'px">' + input[i] + '</div>');
+
+                document.getElementById('bars').innerHTML = divs.join('');
+                document.getElementById('barlabels').innerHTML = divsBars.join('');
+            }
+            else {
+                var basis = data.rows[data.markedRow].split(',');
+
+                var CoordinatesGreen = [];
+                var CoordinatesRed = [];
+
+                CoordinatesGreen[0] = "0px "+zeroPosition+"px, ";
+                CoordinatesRed[0] = "0px "+zeroPosition+"px, ";
+
+                document.getElementById('bars').innerHTML = "";
+                document.getElementById('barlabels').innerHTML = "";
+                document.getElementById('deltas').innerHTML = "";
+                document.getElementById('deltasLabels').innerHTML = "";
+
+                for(i=0; i<input.length; i++) {
+                    if(input[i]*1>basis[i]) {
+
+                        var Y1 = math.tan()*
+
+                        var Y2 = zeroPosition - input[i]*factor;
+                        var PushStringGreen = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+Y2+"px, ";
+                        CoordinatesGreen.push(PushStringGreen);
+
+                        var PushStringRed = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+zeroPosition+"px, ";
+                        CoordinatesRed.push(PushStringRed);
+                        //console.log(PushStringGreen);
+                        //console.log(LinePositiveY);
+                        //console.log("I " + input[i]);
+                    }
+                    else {
+                        var PushStringGreen = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+zeroPosition+"px, ";
+                        CoordinatesGreen.push(PushStringGreen);
+
+                        //console.log("III " + input[i]);
+                        var Y2 = (basis[i]-input[i])*factor +  zeroPosition ;
+                        var PushStringRed = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+Y2+"px, ";
+                        CoordinatesRed.push(PushStringRed);
+                       //console.log(PushStringGreen);
+                        //console.log(LinePositiveY);
+                    }
+                }
+                PushStringGreen = myChart.columnWidth*(i) + "px " + zeroPosition + "px, "
+                CoordinatesGreen.push(PushStringGreen);
+
+                PushStringRed = myChart.columnWidth*(i) + "px " + zeroPosition + "px, "
+                CoordinatesRed.push(PushStringRed);
+
+                document.getElementById('areaGreen').style.width = $( "#chart" ).css("width");
+                document.getElementById('areaGreen').style.height = $( "#chart" ).css("height");
+                document.getElementById('areaGreen').style.webkitClipPath = "polygon("+CoordinatesGreen.join('')+" 0px "+zeroPosition+"px)";
+
+
+                document.getElementById('areaRed').style.width = $( "#chart" ).css("width");
+                document.getElementById('areaRed').style.height = $( "#chart" ).css("height");
+                document.getElementById('areaRed').style.webkitClipPath = "polygon("+CoordinatesRed.join('')+" 0px "+zeroPosition+"px)";
+
+                document.getElementById('areaBase').style.height = $( "#chart" ).css("height").substr(0,3) - zeroPosition-5;
+                document.getElementById('areaBase').style.width = $( "#chart" ).css("width");
+                document.getElementById('areaBase').style.top = zeroPosition+5;
+
+            }
         }
-        document.getElementById('bars').innerHTML = divs.join('');
-        document.getElementById('barlabels').innerHTML = divsBars.join('');
 
 
     }
@@ -559,8 +697,6 @@ console.log("SHOW: "+deviationShow);
 
     }
 
-
-
     function drawReference(input) {
 
         var bar_width = 30;
@@ -619,9 +755,9 @@ console.log("SHOW: "+deviationShow);
         var number = [];
 
         data.rows[0] = "1427938248,1428938248,1427738248,1426938248,1425938248,-1424938248,1428938248,1428938248,1428938248,1428938248,1428938248,1428938248,-1428938248";
-        data.rows[1] = "10,20,30,40,50,-60,70,80,90,100,43,120,-100";
-        data.rows[2] = "11,12,13,14,40,-56,65,70,80,90,46,100,-90";
-        data.rows[3] = "34,21,31,4,21,31,4,21,31,5,-12,-21,-80";
+        data.rows[1] = "10,120,30,40,50,-60,70,80,90,100,43,120,-100";
+        data.rows[2] = "11,112,13,14,40,-56,65,70,80,90,46,120,-90";
+        data.rows[3] = "100,100,100,100,100,100,100,100,100,100,100,100,100";
 
 /*        for (var i = 0, f;f =files[i]; i++){
             if (f.type === "text/plain") {
