@@ -1,7 +1,7 @@
 <html>
 <head>
     <link rel="stylesheet" href="scss/charting.css" />
-    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="jquery-1.10.2.js"></script>
 </head>
 
 <body>
@@ -11,7 +11,7 @@
 <!--<div style="position: relative; width: 300px; height: 230px; background-color: yellow; overflow-y:scroll;"><img src="img/BARS.png"></div>-->
 
 <!--<<button id="button" onclick="drawTable(output_n,number)">Table</button>-->
-<div id="button" onclick="handleFileSelect()">GO</div>
+<div id="button" onclick="handleFileSelect()">GO!</div>
 <div id="drop_zone" >Drop data file here</div>
 <output id="list"></output>
 
@@ -56,6 +56,8 @@
     <div id="areaBase"></div>
     <div id="areaRed"></div>
     <div id="areaGreen"></div>
+    <div id="TEST"></div>
+
 </div>
 <div id="debug"></div>
 
@@ -102,7 +104,6 @@
         console.log("MAX:" + max);
     }
     function setMin(values) {
-        var max = 0;
 
         if (Math.min.apply(Math, values) >= 0) {
             min = 0;
@@ -314,11 +315,7 @@
         var divs = [];
         var divsBars = [];
 
-
-
         var factor = document.getElementById('chart').style.height.substr(0,3)* 0.8/setRange(setMax(data.datapoint),setMin(data.datapoint));
-        //var temp = document.getElementById('chart').style.height;
-        //console.log(temp);
 
         var zeroPosition = setMax(data.datapoint)* 1.1*factor;
         document.getElementById('axis').style.top = zeroPosition;
@@ -348,7 +345,370 @@
                 height = input[i]*factor;
             }
 
-            if(myChart.chartType === "Bar") {
+            if (myChart.chartType !== "Bar") {
+                var delta = [];
+
+                var basis = data.rows[data.markedRow].split(',');
+
+                for (i = 1; i < data.rows.length; i++) {
+                    var basis1 = data.rows[i].split(',');
+
+                    for (j = 1; j < data.rows.length; j++) {
+                        var basis2 = data.rows[j].split(',');
+                        for (k = 1; k < basis2.length; k++) {
+
+                            delta.push(basis1[k] * 1 - basis2[k] * 1);
+                            delta.push(basis2[k] * 1 - basis1[k] * 1);
+                        }
+                        delta.push(basis1[j]);
+                    }
+                }
+
+                var factor = document.getElementById('chart').style.height.substr(0, 3) * 0.8 / setRange(setMax(delta), setMin(delta));
+                var zeroPosition = setMax(delta) * 1.1 * factor;
+                var polygon = [[]];
+                polygon[0] = [];
+                var polygonCount = 0;
+
+                var CoordinatesGreen = [];
+                var CoordinatesRed = [];
+                var InputOnTop = [];
+                var CrossesAt = [];
+                CrossesAt[0] = 0;
+                var CountCrosses = 0;
+                var polygonDivs = [];
+
+//START: Creating Polygons
+
+                for (i = 0; i < input.length; i++) {
+                    if (input[i] * 1 > basis[i] * 1) {
+                        InputOnTop[i] = true;
+
+                    }
+                    else {
+                        InputOnTop[i] = false
+
+                    }
+
+                    if (InputOnTop[i] != InputOnTop[i - 1] && i > 0) {
+                        CountCrosses++;
+                        CrossesAt[CountCrosses] = i;
+                    }
+                }
+
+console.log("TOP:" + i + ":" + InputOnTop);
+
+                var x = [];
+                var i = 0;
+
+//setting initial start point at very left
+
+                X = 0;
+                Y = (setMax(delta) - input[i]) * factor;
+
+                XStrg = X + "px ";
+                YStrg = Y + "px, ";
+
+                polygon[polygonCount].push(XStrg);
+                polygon[polygonCount].push(YStrg);
+
+                for (q=0; q<CrossesAt.length; q++) {
+//console.log("LENGHT: "+CrossesAt.length+" Q: "+q);
+
+                    if(q+1 === CrossesAt.length){max = input.length}
+                    else {max = CrossesAt[q+1]}
+
+                    for (i = CrossesAt[q]; i < max; i++) {
+                        //console.log("Q: "+q+" INPUT: "+input[i]+"Column: "+myChart.columnWidth *i);
+
+                        //setting coordinates until next intersection
+
+
+                        X = myChart.columnWidth * i + myChart.columnWidth / 2;
+                        Y = (setMax(delta) - input[i]) * factor;
+
+                        XStrg = X + "px ";
+                        YStrg = Y + "px, ";
+console.log("1 X: "+X+" Y: "+Y);
+                        polygon[polygonCount].push(XStrg + YStrg);
+
+                        //if intersection
+
+                        if (InputOnTop[i] != InputOnTop[i + 1] && i < input.length-1) {
+
+                            var A = ((input[i + 1] * 1 - input[i] * 1) * factor) / myChart.columnWidth;
+                            var B = ((basis[i + 1] * 1 - basis[i] * 1) * factor) / myChart.columnWidth;
+                            X = ((A - B) * (myChart.columnWidth * i + myChart.columnWidth / 2) - input[i] * factor + basis[i] * factor) / (A - B);
+                            Y = A * (X - (myChart.columnWidth * i + myChart.columnWidth / 2)) + input[i] * factor;
+console.log("IF X: "+X+" Y: "+Y);
+console.log("Q: "+CrossesAt[q]+" INPUT: "+input[CrossesAt[q]]+" A: "+A/factor+" B: "+B/factor);
+
+
+                            XStrg = X + "px ";
+                            YStrg = Y + "px, ";
+
+                            polygon[polygonCount].push(XStrg + YStrg);
+                        }
+
+                        if(i === input.length){
+                            X = myChart.columnWidth * i + myChart.columnWidth / 2;
+                            Y = (setMax(delta) - input[i]) * factor;
+
+                            XStrg = X + "px ";
+                            YStrg = Y + "px, ";
+
+                            polygon[polygonCount].push(XStrg + YStrg);
+
+                        }
+                    }
+
+                    for (j = i-1; j > CrossesAt[q]; j--) {
+                        X = myChart.columnWidth * j + myChart.columnWidth / 2;
+                        Y = (setMax(delta) - basis[j]) * factor;
+
+                        XStrg = X + "px ";
+                        YStrg = Y + "px, ";
+
+                        polygon[polygonCount].push(XStrg + YStrg);
+
+                        //console.log("J: "+j+", X: "+XStrg+", Y: "+YStrg);
+                    }
+
+
+                    X = myChart.columnWidth*CrossesAt[q]+myChart.columnWidth/2;
+                    Y = (setMax(delta) - basis[CrossesAt[q]]) * factor;
+
+                    XStrg = X + "px ";
+                    YStrg = Y + "px, ";
+
+                    polygon[polygonCount].push(XStrg + YStrg);
+
+                    if(q>0) {
+                        var A = ((input[CrossesAt[q]] * 1 - input[CrossesAt[q] - 1] * 1) * factor) / myChart.columnWidth;
+                        var B = ((basis[CrossesAt[q]] * 1 - basis[CrossesAt[q] - 1] * 1) * factor) / myChart.columnWidth;
+
+                        //console.log("Q: "+CrossesAt[q]+" INPUT: "+input[CrossesAt[q]]+" A: "+A/factor+" B: "+B/factor);
+
+                        X = ((A - B) * (myChart.columnWidth * [CrossesAt[q]-1] + myChart.columnWidth / 2) - input[CrossesAt[q] - 1] * factor + basis[CrossesAt[q] - 1] * factor) / (A - B);
+                        Y = A * (X - (myChart.columnWidth * [CrossesAt[q]-1] + myChart.columnWidth / 2)) + input[CrossesAt[q] - 1] * factor;
+
+                    }
+                    else{
+                        X = 0;
+                        Y = (setMax(delta) - basis[0]) * factor;
+                    }
+
+                    XStrg = X + "px ";
+                    YStrg = Y + "px ";
+
+                    polygon[polygonCount].push(XStrg + YStrg);
+
+                    console.log("Q: "+q+" CrossatQ: "+CrossesAt[q]+" CrossesAt: " +input[CrossesAt[q]]+" Basis: "+basis[CrossesAt[q]]);
+                    //console.log("POLYGON "+polygonCount+": "+polygon[polygonCount].join(''));
+
+                    if (input[CrossesAt[q]]*1>basis[CrossesAt[q]]*1){
+                        color = myChart.ColorPositive;
+                    }
+                    else{
+                        color = myChart.ColorNegative;
+                    }
+
+                    polygonDivs.push('<div id="polygon_'+polygonCount+'" style="width: 800px; height:400px; background-color: '+color+'; position:absolute;'+
+                    ' -webkit-clip-path: polygon(' + polygon[polygonCount].join('') + ');"></div>');
+
+                    //console.log(polygonDivs.join(''));
+
+                    polygonCount++;
+                    polygon[polygonCount] = [];
+
+
+                }
+
+                /*for (i = 0; i < 4; i++) {
+
+                    while (InputOnTop[i] === InputOnTop[i + 1]) {
+
+                        var X = myChart.columnWidth * i + myChart.columnWidth / 2;
+                        var Y = zeroPosition- (input[i]-basis[i]) * factor;
+                        var coordinates = X + "px " + Y + "px, ";
+                        polygon.push(coordinates);
+                        i++;
+                    }
+
+
+
+                    var X = myChart.columnWidth * (i) + myChart.columnWidth / 2;
+                    var Y = zeroPosition- (input[i]-basis[i]) * factor;
+                    polygon.push(coordinates);
+
+                    if (InputOnTop[i] != InputOnTop[i + 1]) {
+
+                        var A = ((input[i + 1] * 1 - input[i] * 1) * factor) / myChart.columnWidth;
+                        var B = ((basis[i + 1] * 1 - basis[i] * 1) * factor) / myChart.columnWidth;
+                        var X = ((A - B) * (myChart.columnWidth * i + myChart.columnWidth / 2) - input[i] * factor + basis[i] * factor) / (A - B);
+                        var Y = A * (X - (myChart.columnWidth * i + myChart.columnWidth / 2)) + input[i]*factor;
+
+                        console.log(" A: " + A/factor + " B: " + B/factor + " X: " + X + " Y: " + Y/factor);
+                        var coordinates = X + "px " + Y + "px, ";
+
+                        polygon.push(coordinates);
+
+                        for (j = i; j >= 0; j--) {
+                            X = myChart.columnWidth * j + myChart.columnWidth / 2;
+                            //TODO zeroposition ist nicht der richtige Wert für die Referenzlinie -  im Block weiter unten zuerst korrigieren, dann hier
+                            Y =  zeroPosition;
+                            console.log(" X: " + X + " Y: " + Y/factor);
+                            coordinates = X + "px " + Y + "px, ";
+                            polygon.push(coordinates);
+                        }
+
+                        polygonCount++;
+                    }
+                        console.log(i + " -- " + polygonCount + " -- " + polygon);
+                }*/
+
+                document.getElementById('TEST').style.width = $("#chart").css("width");
+                document.getElementById('TEST').style.height = $("#chart").css("height");
+                document.getElementById('TEST').innerHTML = polygonDivs.join('');
+
+//ab hier
+                CoordinatesGreen[0] = "0px " + zeroPosition + "px, ";
+                CoordinatesRed[0] = "0px " + zeroPosition + "px, ";
+
+                document.getElementById('bars').innerHTML = "";
+                document.getElementById('barlabels').innerHTML = "";
+                document.getElementById('deltas').innerHTML = "";
+                document.getElementById('deltasLabels').innerHTML = "";
+
+                for (i = 0; i < input.length; i++) {
+                    if (input[i] * 1 > basis[i] * 1) {
+
+                        if (i > 0) {
+                            if (input[i - 1] * 1 < basis[i - 1] * 1) {
+                                var X1G = (myChart.columnWidth * (i) + myChart.columnWidth / 2 - myChart.columnWidth * ((1 / (Math.abs(input[i]) - Math.abs(input[i - 1]))) * ((Math.abs(input[i])) - basis[i]))) + "px ";
+                                console.log((1 / (Math.abs(input[i]) - Math.abs(input[i - 1]))) * ((Math.abs(input[i])) - basis[i]))
+                                var Y1G = zeroPosition + "px, ";
+                            }
+                            else {
+                                var X1G = "";
+                                var Y1G = "";
+                            }
+                        }
+                        else {
+                            X1G = "0px ";
+                            Y1G = (zeroPosition - input[i] * factor) + "px, ";
+                        }
+
+
+                        var X2G = (myChart.columnWidth * i + myChart.columnWidth / 2) + "px ";
+                        var Y2G = (zeroPosition - ((input[i] - basis[i]) * factor)) + "px, ";
+
+                        if (i < input.length - 1) {
+                            if (basis[i + 1] * 1 > input[i + 1] * 1) {
+                                var X3G = (myChart.columnWidth * (i) + myChart.columnWidth / 2 + myChart.columnWidth * (1 / (Math.abs(input[i]) - Math.abs(input[i + 1])) * (Math.abs(input[i]) - basis[i]))) + "px ";
+                                var Y3G = zeroPosition + "px, ";
+                            }
+                            else {
+                                var X3G = "";
+                                var Y3G = "";
+                            }
+                        }
+                        else {
+                            var X3G = "";
+                            var Y3G = "";
+                        }
+
+                        //console.log(i + ":X1G: " + X1G + " " + Y1G);
+                        //console.log(i + ":X2G: " + X2G + " " + Y2G);
+                        //console.log(i + ":X3G: " + X3G + " " + Y3G);
+
+
+                        var PushStringGreen = X1G + Y1G + X2G + Y2G + X3G + Y3G;
+                        CoordinatesGreen.push(PushStringGreen);
+
+                        var PushStringRed = myChart.columnWidth * i + myChart.columnWidth / 2 + "px " + zeroPosition + "px, ";
+                        CoordinatesRed.push(PushStringRed);
+                    }
+                    else {
+
+                        var PushStringGreen = myChart.columnWidth * i + myChart.columnWidth / 2 + "px " + zeroPosition + "px, ";
+                        CoordinatesGreen.push(PushStringGreen);
+
+
+                        if (i > 0) {
+                            if (input[i - 1] * 1 > basis[i - 1] * 1) {
+                                var X1R = (myChart.columnWidth * (i) - myChart.columnWidth / 2 + myChart.columnWidth * (1 / (Math.abs(input[i - 1]) - Math.abs(input[i]))) * (Math.abs(input[i - 1] - basis[i]))) + "px ";
+                                //console.log(((Math.abs(input[i - 1]) - Math.abs(input[i]))));
+                                //console.log((Math.abs(input[i - 1] - basis[i])));
+                                //console.log((1 / (Math.abs(input[i - 1]) - Math.abs(input[i]))) * (Math.abs(input[i - 1]) - basis[i]));
+
+                                var Y1R = (zeroPosition) + "px, ";
+                            }
+                            else {
+                                var X1R = "";
+                                var Y1R = "";
+                            }
+                        }
+                        else {
+                            var X1R = "0px ";
+                            var Y1R = ((basis[i] - input[i]) * factor + zeroPosition) + "px, ";
+                        }
+
+                        var X2R = (myChart.columnWidth * i + myChart.columnWidth / 2) + "px ";
+                        var Y2R = ((basis[i] - input[i]) * factor + zeroPosition) + "px, ";
+
+                        if (i < input.length - 1) {
+                            if (input[i + 1] * 1 > basis[i + 1] * 1) {
+                                var X3R = (myChart.columnWidth * (i) + myChart.columnWidth / 2 + myChart.columnWidth * ((1 / (Math.abs(input[i + 1]) - Math.abs(input[i]))) * (basis[i] - input[i]))) + "px ";
+                                //console.log(1/((Math.abs(input[i + 1]) - Math.abs(input[i]))));
+                                //console.log((basis[i]-input[i]));
+                                //console.log(myChart.columnWidth * ((1/(Math.abs(input[i + 1]) - Math.abs(input[i]))) * (basis[i]-input[i])));
+                                var Y3R = (zeroPosition) + "px, ";
+                            }
+                            else {
+                                var X3R = "";
+                                var Y3R = "";
+                            }
+                        }
+                        else {
+                            var X3R = "";
+                            var Y3R = "";
+                        }
+
+                        //console.log(i + ":X1R: " + X1R + " " + Y1R);
+                        //console.log(i+":X2R: "+X2R+" "+Y2R);
+                        //console.log(i+":X3R: "+X3R+" "+Y3R);
+
+                        var PushStringRed = X1R + Y1R + X2R + Y2R + X3R + Y3R;
+                        CoordinatesRed.push(PushStringRed);
+                    }
+                }
+
+//console.log(CoordinatesRed.join(''));
+
+                PushStringGreen = myChart.columnWidth * (i) + "px " + zeroPosition + "px, "
+                CoordinatesGreen.push(PushStringGreen);
+
+                PushStringRed = myChart.columnWidth * (i) + "px " + zeroPosition + "px, "
+                CoordinatesRed.push(PushStringRed);
+
+                document.getElementById('axis').style.top = zeroPosition;
+                document.getElementById('axis').style.height = "5px";
+                document.getElementById('axis').style.width = myChart.columnWidth * input.length + "px";
+
+                document.getElementById('areaGreen').style.width = $("#chart").css("width");
+                document.getElementById('areaGreen').style.height = $("#chart").css("height");
+                //document.getElementById('areaGreen').style.webkitClipPath = "polygon(" + CoordinatesGreen.join('') + " 0px " + zeroPosition + "px)";
+
+                document.getElementById('areaRed').style.width = $("#chart").css("width");
+                document.getElementById('areaRed').style.height = $("#chart").css("height");
+                //document.getElementById('areaRed').style.webkitClipPath = "polygon(" + CoordinatesRed.join('') + " 0px " + zeroPosition + "px)";
+
+                document.getElementById('areaBase').style.height = $("#chart").css("height").substr(0, 3) - zeroPosition - 5;
+                document.getElementById('areaBase').style.width = $("#chart").css("width");
+                //document.getElementById('areaBase').style.top = zeroPosition + 5;
+
+            } else {
 
                 document.getElementById('areaGreen').innerHTML = "";
                 document.getElementById('areaGreen').style.width = "0px";
@@ -381,67 +741,6 @@
 
                 document.getElementById('bars').innerHTML = divs.join('');
                 document.getElementById('barlabels').innerHTML = divsBars.join('');
-            }
-            else {
-                var basis = data.rows[data.markedRow].split(',');
-
-                var CoordinatesGreen = [];
-                var CoordinatesRed = [];
-
-                CoordinatesGreen[0] = "0px "+zeroPosition+"px, ";
-                CoordinatesRed[0] = "0px "+zeroPosition+"px, ";
-
-                document.getElementById('bars').innerHTML = "";
-                document.getElementById('barlabels').innerHTML = "";
-                document.getElementById('deltas').innerHTML = "";
-                document.getElementById('deltasLabels').innerHTML = "";
-
-                for(i=0; i<input.length; i++) {
-                    if(input[i]*1>basis[i]) {
-
-                        var Y1 = math.tan()*
-
-                        var Y2 = zeroPosition - input[i]*factor;
-                        var PushStringGreen = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+Y2+"px, ";
-                        CoordinatesGreen.push(PushStringGreen);
-
-                        var PushStringRed = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+zeroPosition+"px, ";
-                        CoordinatesRed.push(PushStringRed);
-                        //console.log(PushStringGreen);
-                        //console.log(LinePositiveY);
-                        //console.log("I " + input[i]);
-                    }
-                    else {
-                        var PushStringGreen = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+zeroPosition+"px, ";
-                        CoordinatesGreen.push(PushStringGreen);
-
-                        //console.log("III " + input[i]);
-                        var Y2 = (basis[i]-input[i])*factor +  zeroPosition ;
-                        var PushStringRed = myChart.columnWidth*i +  myChart.columnWidth/2 + "px "+Y2+"px, ";
-                        CoordinatesRed.push(PushStringRed);
-                       //console.log(PushStringGreen);
-                        //console.log(LinePositiveY);
-                    }
-                }
-                PushStringGreen = myChart.columnWidth*(i) + "px " + zeroPosition + "px, "
-                CoordinatesGreen.push(PushStringGreen);
-
-                PushStringRed = myChart.columnWidth*(i) + "px " + zeroPosition + "px, "
-                CoordinatesRed.push(PushStringRed);
-
-                document.getElementById('areaGreen').style.width = $( "#chart" ).css("width");
-                document.getElementById('areaGreen').style.height = $( "#chart" ).css("height");
-                document.getElementById('areaGreen').style.webkitClipPath = "polygon("+CoordinatesGreen.join('')+" 0px "+zeroPosition+"px)";
-
-
-                document.getElementById('areaRed').style.width = $( "#chart" ).css("width");
-                document.getElementById('areaRed').style.height = $( "#chart" ).css("height");
-                document.getElementById('areaRed').style.webkitClipPath = "polygon("+CoordinatesRed.join('')+" 0px "+zeroPosition+"px)";
-
-                document.getElementById('areaBase').style.height = $( "#chart" ).css("height").substr(0,3) - zeroPosition-5;
-                document.getElementById('areaBase').style.width = $( "#chart" ).css("width");
-                document.getElementById('areaBase').style.top = zeroPosition+5;
-
             }
         }
 
@@ -755,9 +1054,9 @@
         var number = [];
 
         data.rows[0] = "1427938248,1428938248,1427738248,1426938248,1425938248,-1424938248,1428938248,1428938248,1428938248,1428938248,1428938248,1428938248,-1428938248";
-        data.rows[1] = "10,120,30,40,50,-60,70,80,90,100,43,120,-100";
-        data.rows[2] = "11,112,13,14,40,-56,65,70,80,90,46,120,-90";
-        data.rows[3] = "100,100,100,100,100,100,100,100,100,100,100,100,100";
+        data.rows[1] = "10,120,30,40,50,20,70,80,90,100,43,120,110";
+        data.rows[2] = "200,150,200,150,40,60,30,70,200,180,170,160,120";
+        data.rows[3] = "100,100,100,90,90,100,100,100,100,100,100,100,100";
 
 /*        for (var i = 0, f;f =files[i]; i++){
             if (f.type === "text/plain") {
