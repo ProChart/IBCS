@@ -109,6 +109,13 @@ function deviationToggle(){
         document.getElementById('chart').style.top = "130px";
         document.getElementById('chart').style.height = "800px";
         document.getElementById('switchView').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonFullScreenOn.png height=25px width=25px></a>';
+        if (data.type == "P") {
+            document.getElementById('option_deviation').innerHTML = '<img src=img/ButtonToggleAbsolute.png height=25px width=25px>';
+        }
+        else {
+            document.getElementById('option_deviation').innerHTML = '<img src=img/ButtonTogglePercentages.png height=25px width=25px>';
+        };
+        document.getElementById('option_deviation').setAttribute("style","opacity:0.2; -moz-opacity:0.2; filter:alpha(opacity=20)");
         SplitScreen = false;
 
         drawChart(data.row);
@@ -121,6 +128,14 @@ function deviationToggle(){
         document.getElementById('deltas').innerHTML = "";
         document.getElementById('deltasLabels').innerHTML = "";
         document.getElementById('switchView').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonSplitScreenOn.png height=25px width=25px></a>';
+        if (data.type == "P") {
+            document.getElementById('option_deviation').innerHTML = '<a id=link href=# onclick=drawDeviation()><img src=img/ButtonToggleAbsolute.png height=25px width=25px></a>';
+        }
+        else {
+            document.getElementById('option_deviation').innerHTML = '<a id=link href=# onclick=drawDeviation()><img src=img/ButtonTogglePercentages.png height=25px width=25px></a>';
+        };
+        document.getElementById('option_deviation').setAttribute("style","opacity:1; -moz-opacity:1; filter:alpha(opacity=100)");
+
         SplitScreen = true;
 
         drawChart(data.row);
