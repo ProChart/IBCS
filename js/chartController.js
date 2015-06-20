@@ -51,11 +51,16 @@ function hoverRow(rowNumber) {
         if(data.markedRow>-1) {drawDelta(number)};
 
     }
+
     else {
         document.getElementById('deltasLabels').innerHTML = "";
         document.getElementById('deltas').innerHTML = "";
 
     };
+
+    if(data.activeRow == data.markedRow) {
+        document.getElementById('DeviationLabels').innerHTML = "";
+    }
 
 }
 

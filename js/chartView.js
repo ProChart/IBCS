@@ -624,8 +624,10 @@ function drawDeviationBars(input,hoveredRow){
 
     var factor = (document.getElementById('DeviationChart').style.height.substr(0,3)-(2*labelSpace))*0.8/setRange(setMax(input),setMin(input));
     //console.log("FAKTOR: "+factor);
-    //onsole.log("RANGE: "+ setRange(setMax(deltaAbsolute),setMin(deltaAbsolute)));
-    var zeroPosition = setMax(input)*factor+labelSpace;
+
+
+    var zeroPosition = setMax(deltaAbsolute)*factor+labelSpace;
+
 
     for(i=0; i<input.length; i++) {
 
@@ -641,7 +643,8 @@ function drawDeviationBars(input,hoveredRow){
             labelPosition = top + height + 10;
             color[i] = myChart.ColorNegative;
         };
-        // console.log(factor+":"+":"+height+":"+deltaRelative[i]+":"+top);
+ //       console.log(factor+":"+":"+height+":"+deltaRelative[i]+":"+top);
+
 
 
         divs.push('<div id="needleLine_' + i +'" style="background-color: '+ color[i] + '; position:absolute;' +
