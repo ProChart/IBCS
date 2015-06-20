@@ -997,52 +997,13 @@ console.log("Q: "+CrossesAt[q]+" INPUT: "+input[CrossesAt[q]]+" A: "+A/factor+" 
 
     }
 
-    function drawReference(input) {
 
-        var bar_width = 30;
-        var top = 20;
-        var divs = [];
-
-        var factor = document.getElementById('chart').style.height.substr(0,3)* 0.8/setRange(setMax(data.datapoint),setMin(data.datapoint));
-        var zeroPosition = setMax(data.datapoint)* 1.1*factor;
-
-        for(i=0; i<input.length; i++) {
-
-            if(input[i]<=0){
-                top=zeroPosition+input[i]*-1*factor+5;
-            }
-            else {
-                top=zeroPosition-input[i]*factor;
-            }
-
-            divs.push('<div id="reference_' + i + '"' +
-            ' style="background-color: #00affa; position:absolute;' +
-            ' height: 1px;' +
-            ' width:' + bar_width * 0.7 + 'px;' +
-            ' top:' + top + 'px;' +
-            ' left:' + (bar_width * i +5)+ 'px"' +
-            '></div>');
-        };
-
-        document.getElementById('references').innerHTML = divs.join('');
-    }
 
     function drawOutput(out,row) {
        drawTable(row);
    }
 
-    function timeConverter(UNIX_timestamp){
-        var a = new Date(UNIX_timestamp*1000);
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var year = a.getFullYear()-2000;
-        var month = a.getMonth();
-        var date = a.getDate();
-        var hour = a.getHours();
-        var min = a.getMinutes();
-        var sec = a.getSeconds();
-        var time = date + '/' + month + '/' + year;
-        return time;
-    }
+
 
 </script>
 
