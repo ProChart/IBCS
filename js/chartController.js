@@ -47,7 +47,7 @@ function hoverRow(rowNumber) {
         else {drawNeedles(data.row, data.activeRow)}
     }
 
-    if(deviationShow == false && data.markedRow != data.activeRow) {
+    if(SplitScreen == false && data.markedRow != data.activeRow) {
         if(data.markedRow>-1) {drawDelta(number)};
 
     }
@@ -105,11 +105,11 @@ function clickRow(rowNumber) {
 }
 
 function deviationToggle(){
-    if (deviationShow){
+    if (SplitScreen){
         document.getElementById('chart').style.top = "130px";
         document.getElementById('chart').style.height = "800px";
-        document.getElementById('deviationOnOff').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonDeltaOn.png height=25px width=25px></a>';
-        deviationShow = false;
+        document.getElementById('switchView').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonFullScreenOn.png height=25px width=25px></a>';
+        SplitScreen = false;
 
         drawChart(data.row);
         if(data.markedRow>-1) {drawDelta(data.row)};
@@ -120,8 +120,8 @@ function deviationToggle(){
         document.getElementById('chart').style.height = "400px";
         document.getElementById('deltas').innerHTML = "";
         document.getElementById('deltasLabels').innerHTML = "";
-        document.getElementById('deviationOnOff').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonDeltaOff.png height=25px width=25px></a>';
-        deviationShow = true;
+        document.getElementById('switchView').innerHTML = '<a id=link href=# onclick=deviationToggle()><img src=img/ButtonSplitScreenOn.png height=25px width=25px></a>';
+        SplitScreen = true;
 
         drawChart(data.row);
         //if(data.markedRow>-1) {drawDelta(data.row)};
