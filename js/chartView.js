@@ -2,6 +2,22 @@
  * Created by Joerg Decker on 20/06/15.
  */
 
+function clearBarTimeLine(){
+    document.getElementById('bars').innerHTML = "";
+    document.getElementById('barlabels').innerHTML = "";
+    document.getElementById('deltas').innerHTML = "";
+    document.getElementById('deltasLabels').innerHTML = "";
+}
+
+function clearLineTimeLine(){
+    console.log("ClearLINE");
+
+    document.getElementById('Area').innerHTML = "";
+    document.getElementById('Area').style.width = "0px";
+    document.getElementById('Area').style.height = "0px";
+
+}
+
 function drawChart(input) {
 
 
@@ -16,14 +32,12 @@ function drawChart(input) {
     document.getElementById('axis').style.height = "5px";
     document.getElementById('axis').style.width = myChart.columnWidth*input.length+"px";
 
-    for(i=0; i<input.length; i++) {
-
-        var top = 0;
-        var topLabel = 0;
-        var height = 0;
+    var top = 0;
+    var topLabel = 0;
+    var height = 0;
 
 
-        if(input[i]<=0){
+/*        if(input[i]<=0){
             top=zeroPosition;
             topLabel =zeroPosition+15;
         }
@@ -37,9 +51,12 @@ function drawChart(input) {
         }
         else {
             height = input[i]*factor;
-        }
+        }*/
 
-        if (myChart.chartType !== "Bar") {
+        if (myChart.chartType == "Line") {
+
+            clearBarTimeLine();
+
             var delta = [];
 
             var basis = data.rows[data.markedRow].split(',');
@@ -72,7 +89,7 @@ function drawChart(input) {
             var CountCrosses = 0;
             var polygonDivs = [];
 
-//START: Creating Polygons
+            //START: Creating Polygons
 
             for (i = 0; i < input.length; i++) {
                 if (input[i] * 1 > basis[i] * 1) {
@@ -95,7 +112,7 @@ function drawChart(input) {
             var x = [];
             var i = 0;
 
-//setting initial start point at very left
+            //setting initial start point at very left
 
             X = 0;
             Y = (setMax(delta) - input[i]) * factor;
@@ -107,7 +124,7 @@ function drawChart(input) {
             polygon[polygonCount].push(YStrg);
 
             for (q=0; q<CrossesAt.length; q++) {
-//console.log("LENGHT: "+CrossesAt.length+" Q: "+q);
+            //console.log("LENGHT: "+CrossesAt.length+" Q: "+q);
 
                 if(q+1 === CrossesAt.length){max = input.length}
                 else {max = CrossesAt[q+1]}
@@ -197,7 +214,7 @@ function drawChart(input) {
 
                 polygon[polygonCount].push(XStrg + YStrg);
 
-                console.log("Q: "+q+" CrossatQ: "+CrossesAt[q]+" CrossesAt: " +input[CrossesAt[q]]+" Basis: "+basis[CrossesAt[q]]);
+                //console.log("Q: "+q+" CrossatQ: "+CrossesAt[q]+" CrossesAt: " +input[CrossesAt[q]]+" Basis: "+basis[CrossesAt[q]]);
                 //console.log("POLYGON "+polygonCount+": "+polygon[polygonCount].join(''));
 
                 if (input[CrossesAt[q]]*1>basis[CrossesAt[q]]*1){
@@ -214,65 +231,16 @@ function drawChart(input) {
 
                 polygonCount++;
                 polygon[polygonCount] = [];
-
-
             }
 
-            /*for (i = 0; i < 4; i++) {
-
-             while (InputOnTop[i] === InputOnTop[i + 1]) {
-
-             var X = myChart.columnWidth * i + myChart.columnWidth / 2;
-             var Y = zeroPosition- (input[i]-basis[i]) * factor;
-             var coordinates = X + "px " + Y + "px, ";
-             polygon.push(coordinates);
-             i++;
-             }
+            document.getElementById('Area').style.width = $("#chart").css("width");
+            document.getElementById('Area').style.height = $("#chart").css("height");
+            document.getElementById('Area').innerHTML = polygonDivs.join('');
 
 
-
-             var X = myChart.columnWidth * (i) + myChart.columnWidth / 2;
-             var Y = zeroPosition- (input[i]-basis[i]) * factor;
-             polygon.push(coordinates);
-
-             if (InputOnTop[i] != InputOnTop[i + 1]) {
-
-             var A = ((input[i + 1] * 1 - input[i] * 1) * factor) / myChart.columnWidth;
-             var B = ((basis[i + 1] * 1 - basis[i] * 1) * factor) / myChart.columnWidth;
-             var X = ((A - B) * (myChart.columnWidth * i + myChart.columnWidth / 2) - input[i] * factor + basis[i] * factor) / (A - B);
-             var Y = A * (X - (myChart.columnWidth * i + myChart.columnWidth / 2)) + input[i]*factor;
-
-             console.log(" A: " + A/factor + " B: " + B/factor + " X: " + X + " Y: " + Y/factor);
-             var coordinates = X + "px " + Y + "px, ";
-
-             polygon.push(coordinates);
-
-             for (j = i; j >= 0; j--) {
-             X = myChart.columnWidth * j + myChart.columnWidth / 2;
-             //TODO zeroposition ist nicht der richtige Wert für die Referenzlinie -  im Block weiter unten zuerst korrigieren, dann hier
-             Y =  zeroPosition;
-             console.log(" X: " + X + " Y: " + Y/factor);
-             coordinates = X + "px " + Y + "px, ";
-             polygon.push(coordinates);
-             }
-
-             polygonCount++;
-             }
-             console.log(i + " -- " + polygonCount + " -- " + polygon);
-             }*/
-
-            document.getElementById('TEST').style.width = $("#chart").css("width");
-            document.getElementById('TEST').style.height = $("#chart").css("height");
-            document.getElementById('TEST').innerHTML = polygonDivs.join('');
-
-//ab hier
             CoordinatesGreen[0] = "0px " + zeroPosition + "px, ";
             CoordinatesRed[0] = "0px " + zeroPosition + "px, ";
 
-            document.getElementById('bars').innerHTML = "";
-            document.getElementById('barlabels').innerHTML = "";
-            document.getElementById('deltas').innerHTML = "";
-            document.getElementById('deltasLabels').innerHTML = "";
 
             for (i = 0; i < input.length; i++) {
                 if (input[i] * 1 > basis[i] * 1) {
@@ -354,9 +322,7 @@ function drawChart(input) {
                     if (i < input.length - 1) {
                         if (input[i + 1] * 1 > basis[i + 1] * 1) {
                             var X3R = (myChart.columnWidth * (i) + myChart.columnWidth / 2 + myChart.columnWidth * ((1 / (Math.abs(input[i + 1]) - Math.abs(input[i]))) * (basis[i] - input[i]))) + "px ";
-                            //console.log(1/((Math.abs(input[i + 1]) - Math.abs(input[i]))));
-                            //console.log((basis[i]-input[i]));
-                            //console.log(myChart.columnWidth * ((1/(Math.abs(input[i + 1]) - Math.abs(input[i]))) * (basis[i]-input[i])));
+
                             var Y3R = (zeroPosition) + "px, ";
                         }
                         else {
@@ -369,16 +335,12 @@ function drawChart(input) {
                         var Y3R = "";
                     }
 
-                    //console.log(i + ":X1R: " + X1R + " " + Y1R);
-                    //console.log(i+":X2R: "+X2R+" "+Y2R);
-                    //console.log(i+":X3R: "+X3R+" "+Y3R);
 
                     var PushStringRed = X1R + Y1R + X2R + Y2R + X3R + Y3R;
                     CoordinatesRed.push(PushStringRed);
                 }
             }
 
-//console.log(CoordinatesRed.join(''));
 
             PushStringGreen = myChart.columnWidth * (i) + "px " + zeroPosition + "px, "
             CoordinatesGreen.push(PushStringGreen);
@@ -402,41 +364,50 @@ function drawChart(input) {
             document.getElementById('areaBase').style.width = $("#chart").css("width");
             //document.getElementById('areaBase').style.top = zeroPosition + 5;
 
-        } else {
-
-            document.getElementById('areaGreen').innerHTML = "";
-            document.getElementById('areaGreen').style.width = "0px";
-            document.getElementById('areaGreen').style.height = "0px";
-
-            document.getElementById('areaRed').innerHTML = "";
-            document.getElementById('areaRed').style.width = "0px";
-            document.getElementById('areaRed').style.height = "0px";
-
-            document.getElementById('areaBase').innerHTML = "";
-            document.getElementById('areaBase').style.width = "0px";
-            document.getElementById('areaBase').style.height = "0px";
-
-
-            divs.push('<div id="bar_' + i + '"' +
-            ' style="background-color: #666666; position:absolute;' +
-            ' height:' + height + 'px;' +
-            ' width:' + myChart.columnWidth * myChart.barWidth + 'px;' +
-            ' top:' + top + 'px;' +
-            ' left:' + (myChart.columnWidth * i + (1 - myChart.barWidth) / 2 * myChart.columnWidth) + 'px"' +
-            ' onmouseover="hoverBar(' + i + ')"' +
-            ' onmouseleave="unhoverBar(' + i + ')"' + '></div>');
-
-            divsBars.push('<div id="barLabel_' + i + '"' +
-            ' style="color: #000000; position:absolute; text-align: center; text-shadow: 0px 0px 3px #ffffff, 3px 0 3px #ffffff,0 3px 3px #ffffff, -3px 0 3px #ffffff,0 -3px 3px #ffffff; font-family: Arial; font-size: ' + myChart.fontSize + '; text-align: center;' +
-            ' height:20px;' +
-            ' width:' + myChart.columnWidth + 'px;' +
-            ' top:' + (topLabel) + 'px;' +
-            ' left:' + (myChart.columnWidth * i) + 'px">' + input[i] + '</div>');
-
-            document.getElementById('bars').innerHTML = divs.join('');
-            document.getElementById('barlabels').innerHTML = divsBars.join('');
         }
-    }
+
+        else {
+
+           clearLineTimeLine();
+
+            for(i=0; i<input.length; i++) {
+
+                 if(input[i]<=0){
+                    top=zeroPosition;
+                    topLabel =zeroPosition+15;
+                 }
+                 else {
+                    top=zeroPosition-input[i]*factor;
+                    topLabel = zeroPosition-15;
+                 }
+
+                 if(input[i]<0){
+                    height=(input[i]*-1*factor)+5;
+                 }
+                 else {
+                    height = input[i]*factor;
+                 }
+
+                divs.push('<div id="bar_' + i + '"' +
+                ' style="background-color: #666666; position:absolute;' +
+                ' height:' + height + 'px;' +
+                ' width:' + myChart.columnWidth * myChart.barWidth + 'px;' +
+                ' top:' + top + 'px;' +
+                ' left:' + (myChart.columnWidth * i + (1 - myChart.barWidth) / 2 * myChart.columnWidth) + 'px"' +
+                ' onmouseover="hoverBar(' + i + ')"' +
+                ' onmouseleave="unhoverBar(' + i + ')"' + '></div>');
+
+                divsBars.push('<div id="barLabel_' + i + '"' +
+                ' style="color: #000000; position:absolute; text-align: center; text-shadow: 0px 0px 3px #ffffff, 3px 0 3px #ffffff,0 3px 3px #ffffff, -3px 0 3px #ffffff,0 -3px 3px #ffffff; font-family: Arial; font-size: ' + myChart.fontSize + '; text-align: center;' +
+                ' height:20px;' +
+                ' width:' + myChart.columnWidth + 'px;' +
+                ' top:' + (topLabel) + 'px;' +
+                ' left:' + (myChart.columnWidth * i) + 'px">' + input[i] + '</div>');
+
+                document.getElementById('bars').innerHTML = divs.join('');
+                document.getElementById('barlabels').innerHTML = divsBars.join('');
+            }
+        }
 
 
 }

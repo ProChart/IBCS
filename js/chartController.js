@@ -147,12 +147,15 @@ function deviationToggle(){
 }
 
 function ChartTypeToggle(){
-    if(myChart.chartType === "Bar") {
-        drawChart(data.row);
+    if(myChart.chartType == "Bar") {
         myChart.chartType = "Line";
+        drawChart(data.row);
+        document.getElementById('BarLine').innerHTML = '<a id="link" href="#" onclick="ChartTypeToggle()"><img src="img/ButtonLineTimeLine.png" height="25" width="25"></a>';
     }
     else {
-        drawChart(data.row);
         myChart.chartType = "Bar";
+        drawChart(data.row);
+        document.getElementById('BarLine').innerHTML = '<a id="link" href="#" onclick="ChartTypeToggle()"><img src="img/ButtonBarTimeLine.png" height="25" width="25"></a>';
     }
 }
+
